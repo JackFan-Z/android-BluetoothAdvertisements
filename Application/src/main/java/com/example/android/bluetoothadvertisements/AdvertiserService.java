@@ -37,8 +37,11 @@ public class AdvertiserService extends Service {
             "com.example.android.bluetoothadvertisements.advertising_failed";
 
     public static final String ADVERTISING_FAILED_EXTRA_CODE = "failureCode";
+    public static final String EXTRA_SERVICE_TYPE = "EXTRA_SERVICE_TYPE";
 
-    public static final int ADVERTISING_TIMED_OUT = 6;
+    public static final int ADVERTISING_TIMED_OUT = 30;
+    public static final int ADVERTISING_OK_START = 1000;
+    private static byte ServiceType = 2;
 
     private BluetoothLeAdvertiser mBluetoothLeAdvertiser;
 
@@ -51,7 +54,7 @@ public class AdvertiserService extends Service {
     /**
      * Length of time to allow advertising before automatically shutting off. (10 minutes)
      */
-    private long TIMEOUT = TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES);
+    private long TIMEOUT = TimeUnit.MILLISECONDS.convert(ADVERTISING_TIMED_OUT, TimeUnit.SECONDS);
 
     @Override
     public void onCreate() {
@@ -94,7 +97,8 @@ public class AdvertiserService extends Service {
                 BluetoothAdapter mBluetoothAdapter = mBluetoothManager.getAdapter();
                 if (mBluetoothAdapter != null) {
                     mBluetoothLeAdvertiser = mBluetoothAdapter.getBluetoothLeAdvertiser();
-                } else {
+                }
+                if (mBluetoothLeAdvertiser == null) {
                     Toast.makeText(this, getString(R.string.bt_null), Toast.LENGTH_LONG).show();
                 }
             } else {
@@ -165,8 +169,20 @@ public class AdvertiserService extends Service {
          */
 
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder();
-        dataBuilder.addServiceUuid(Constants.Service_UUID);
+        //dataBuilder.addServiceUuid(Constants.Service_UUID);
         dataBuilder.setIncludeDeviceName(true);
+
+        if (ServiceType < 6) {
+            ServiceType++;
+        } else {
+            ServiceType = 2;
+        }
+        byte [] dataBytes = new byte[] {
+                0x64, ServiceType, 0x01, 0x0F, 0x0B, 0x28,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        };
+        Log.d("JackTest", "ServiceType " + ServiceType);
+        dataBuilder.addManufacturerData(0x0F1B, dataBytes);
 
         /* For example - this will cause advertising to fail (exceeds size limit) */
         //String failureData = "asdghkajsghalkxcjhfa;sghtalksjcfhalskfjhasldkjfhdskf";
@@ -196,7 +212,7 @@ public class AdvertiserService extends Service {
         public void onStartFailure(int errorCode) {
             super.onStartFailure(errorCode);
 
-            Log.d(TAG, "Advertising failed");
+            Log.e(TAG, "Advertising failed");
             sendFailureIntent(errorCode);
             stopSelf();
 
@@ -205,7 +221,8 @@ public class AdvertiserService extends Service {
         @Override
         public void onStartSuccess(AdvertiseSettings settingsInEffect) {
             super.onStartSuccess(settingsInEffect);
-            Log.d(TAG, "Advertising successfully started");
+            Log.i(TAG, "Advertising successfully started");
+            sendFailureIntent(ADVERTISING_OK_START);
         }
     }
 
@@ -217,6 +234,7 @@ public class AdvertiserService extends Service {
         Intent failureIntent = new Intent();
         failureIntent.setAction(ADVERTISING_FAILED);
         failureIntent.putExtra(ADVERTISING_FAILED_EXTRA_CODE, errorCode);
+        failureIntent.putExtra(EXTRA_SERVICE_TYPE, (int) ServiceType);
         sendBroadcast(failureIntent);
     }
 

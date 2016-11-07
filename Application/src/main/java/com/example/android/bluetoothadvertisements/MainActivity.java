@@ -60,6 +60,7 @@ public class MainActivity extends FragmentActivity {
 
                         // Bluetooth Advertisements are not supported.
                         showErrorText(R.string.bt_ads_not_supported);
+                        setupFragments();
                     }
                 } else {
 

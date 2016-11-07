@@ -60,10 +60,8 @@ public class AdvertiserFragment extends Fragment implements View.OnClickListener
             public void onReceive(Context context, Intent intent) {
 
                 int errorCode = intent.getIntExtra(AdvertiserService.ADVERTISING_FAILED_EXTRA_CODE, -1);
-
-                mSwitch.setChecked(false);
-
                 String errorMessage = getString(R.string.start_error_prefix);
+
                 switch (errorCode) {
                     case AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED:
                         errorMessage += " " + getString(R.string.start_error_already_started);
@@ -83,10 +81,16 @@ public class AdvertiserFragment extends Fragment implements View.OnClickListener
                     case AdvertiserService.ADVERTISING_TIMED_OUT:
                         errorMessage = " " + getString(R.string.advertising_timedout);
                         break;
+                    case AdvertiserService.ADVERTISING_OK_START:
+                        int ServiceType = intent.getIntExtra(AdvertiserService.EXTRA_SERVICE_TYPE, 0);
+                        Toast.makeText(getActivity(), "start ServiceType " + String.valueOf(ServiceType),
+                                Toast.LENGTH_SHORT).show();
+                        return;
                     default:
                         errorMessage += " " + getString(R.string.start_error_unknown);
                 }
 
+                mSwitch.setChecked(false);
                 Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_LONG).show();
             }
         };
